@@ -4,6 +4,8 @@ namespace Tests;
 
 use App\Adapters\PaymentAdapter;
 use App\DTO\ItemDTO;
+use App\Exceptions\InvalidPaymentMethodException;
+use App\Exceptions\PaymentMethodNotSetException;
 use App\Services\CartService;
 use PHPUnit\Framework\TestCase;
 
@@ -125,5 +127,27 @@ class CartServiceTest extends TestCase
         $expectedTotal = round(1750 * pow(1 + $interestRate, 3), 2);
 
         $this->assertEquals($expectedTotal, $cart->checkout(), 'Total com pagamento via Cartão de Crédito em 3x está incorreto');
+    }
+
+    public function testCheckoutThrowsExceptionWhenPaymentMethodNotSet()
+    {
+        $this->expectException(PaymentMethodNotSetException::class);
+        $this->expectExceptionMessage('Não foi setado o método de pagamento');
+
+        $cart = new CartService();
+        $cart->addItem(['name' => 'Produto A', 'price' => 100.00, 'quantity' => 2]);
+
+        $cart->checkout();
+    }
+
+    public function testSetPaymentMethodThrowsExceptionForInvalidMethod()
+    {
+        $this->expectException(InvalidPaymentMethodException::class);
+        $this->expectExceptionMessage("O método de pagamento 'fakeMethod' é inválido ou a classe de estratégia não foi encontrada.");
+
+        $cart = new CartService();
+        $paymentData = new PaymentAdapter(['method' => 'fakeMethod']); // Método inválido
+
+        $cart->setPaymentMethod($paymentData);
     }
 }
