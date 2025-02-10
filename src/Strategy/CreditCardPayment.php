@@ -21,6 +21,6 @@ class CreditCardPayment implements PaymentStrategy
         }
 
         $interestRate = 0.01;
-        return $amount * pow(1 + $interestRate, $this->installments);
+        return round($amount * pow(1 + $interestRate, $this->installments), 2);
     }
 }
