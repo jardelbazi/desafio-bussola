@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Adapters\ItemAdapter;
 use App\Adapters\PaymentAdapter;
+use App\Exceptions\InvalidPaymentMethodException;
 use App\Strategy\PaymentStrategy;
 
 class CartService
@@ -57,6 +58,10 @@ class CartService
      */
     public function checkout(): float
     {
+        if (is_null($this->paymentStrategy)) {
+            throw new InvalidPaymentMethodException('Não foi setado o método de pagamento');
+        }
+
         return $this->paymentStrategy->calculateTotal($this->getSubtotal());
     }
 
