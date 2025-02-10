@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Adapters\ItemAdapter;
 use App\Adapters\PaymentAdapter;
 use App\Exceptions\InvalidPaymentMethodException;
+use App\Exceptions\PaymentMethodNotSetException;
 use App\Strategy\PaymentStrategy;
 
 class CartService
@@ -55,11 +56,12 @@ class CartService
 
     /**
      * @return float 
+     * @throws PaymentMethodNotSetException 
      */
     public function checkout(): float
     {
         if (is_null($this->paymentStrategy)) {
-            throw new InvalidPaymentMethodException('Não foi setado o método de pagamento');
+            throw new PaymentMethodNotSetException('Não foi setado o método de pagamento');
         }
 
         return $this->paymentStrategy->calculateTotal($this->getSubtotal());
@@ -68,10 +70,19 @@ class CartService
     /**
      * @param PaymentAdapter $paymentAdapter 
      * @return void 
+     * @throws InvalidPaymentMethodException 
      */
     public function setPaymentMethod(PaymentAdapter $paymentAdapter): void
     {
-        $strategyClass = $this->getPaymentStrategyClass($paymentAdapter->getMethod());
+        $method = $paymentAdapter->getMethod();
+        $strategyClass = $this->getPaymentStrategyClass($method);
+
+        if (!class_exists($strategyClass)) {
+            throw new InvalidPaymentMethodException(
+                sprintf("O método de pagamento '%s' é inválido ou a classe de estratégia não foi encontrada.", $method)
+            );
+        }
+
         $this->paymentStrategy = new $strategyClass($paymentAdapter->getInstallment());
     }
 
